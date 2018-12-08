@@ -3,6 +3,7 @@ package com.jakewharton.telecine;
 import android.app.Activity;
 import android.content.Intent;
 import android.media.projection.MediaProjectionManager;
+import android.os.Build;
 import com.google.android.gms.analytics.HitBuilders;
 import timber.log.Timber;
 
@@ -35,7 +36,11 @@ final class CaptureHelper {
 
     if (resultCode == Activity.RESULT_OK) {
       Timber.d("Acquired permission to screen capture. Starting service.");
-      activity.startService(TelecineService.newIntent(activity, resultCode, data));
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        activity.startForegroundService(TelecineService.newIntent(activity, resultCode, data));
+      } else {
+        activity.startService(TelecineService.newIntent(activity, resultCode, data));
+      }
     } else {
       Timber.d("Failed to acquire permission to screen capture.");
     }

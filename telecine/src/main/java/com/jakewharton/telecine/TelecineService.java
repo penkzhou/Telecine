@@ -1,10 +1,13 @@
 package com.jakewharton.telecine;
 
 import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.Service;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.IBinder;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
@@ -22,7 +25,6 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import timber.log.Timber;
 
-import static android.app.Notification.PRIORITY_MIN;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 
@@ -31,6 +33,7 @@ public final class TelecineService extends Service {
   private static final String EXTRA_DATA = "data";
   private static final int NOTIFICATION_ID = 99118822;
   private static final String SHOW_TOUCHES = "show_touches";
+  private static final String CHANNEL_ID = "notification_recording";
 
   static Intent newIntent(Context context, int resultCode, Intent data) {
     Intent intent = new Intent(context, TelecineService.class);
@@ -83,6 +86,22 @@ public final class TelecineService extends Service {
       }
     }
 
+    private void createNotificationChannel() {
+      // Create the NotificationChannel, but only on API 26+ because
+      // the NotificationChannel class is new and not in the support library
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        CharSequence name = "Telecine Record";
+        String description = "This notification is used for show recording state.";
+        int importance = NotificationManager.IMPORTANCE_DEFAULT;
+        NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
+        channel.setDescription(description);
+        // Register the channel with the system; you can't change the importance
+        // or other notification behaviors after this
+        NotificationManager notificationManager = getSystemService(NotificationManager.class);
+        notificationManager.createNotificationChannel(channel);
+      }
+    }
+
     @Override public void onStart() {
       if (showTouches) {
         Settings.System.putInt(contentResolver, SHOW_TOUCHES, 1);
@@ -95,14 +114,18 @@ public final class TelecineService extends Service {
       Context context = getApplicationContext();
       String title = context.getString(R.string.notification_recording_title);
       String subtitle = context.getString(R.string.notification_recording_subtitle);
-      Notification notification = new Notification.Builder(context) //
-          .setContentTitle(title)
-          .setContentText(subtitle)
-          .setSmallIcon(R.drawable.ic_videocam_white_24dp)
-          .setColor(ContextCompat.getColor(context, R.color.primary_normal))
-          .setAutoCancel(true)
-          .setPriority(PRIORITY_MIN)
-          .build();
+      createNotificationChannel();
+      Notification.Builder builder = new Notification.Builder(context) //
+              .setContentTitle(title)
+              .setContentText(subtitle)
+              .setSmallIcon(R.drawable.ic_videocam_white_24dp)
+              .setColor(ContextCompat.getColor(context, R.color.primary_normal))
+              .setAutoCancel(true)
+              .setPriority(Notification.PRIORITY_HIGH);
+      if (Build.VERSION.SDK_INT >= 26) {
+        builder.setChannelId(CHANNEL_ID);
+      }
+      Notification notification = builder.build();
 
       Timber.d("Moving service into the foreground with recording notification.");
       startForeground(NOTIFICATION_ID, notification);

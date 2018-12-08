@@ -4,6 +4,7 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.os.Build;
 import android.support.annotation.NonNull;
 import android.view.Gravity;
 import android.view.View;
@@ -25,12 +26,7 @@ import static android.graphics.PixelFormat.TRANSLUCENT;
 import static android.text.TextUtils.getLayoutDirectionFromLocale;
 import static android.view.ViewAnimationUtils.createCircularReveal;
 import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
-import static android.view.WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR;
-import static android.view.WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
-import static android.view.WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS;
-import static android.view.WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
-import static android.view.WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
-import static android.view.WindowManager.LayoutParams.TYPE_SYSTEM_ERROR;
+import static android.view.WindowManager.LayoutParams.*;
 
 @SuppressLint("ViewConstructor") // Lint, in this case, I am smarter than you.
 final class OverlayView extends FrameLayout {
@@ -44,9 +40,13 @@ final class OverlayView extends FrameLayout {
 
   static WindowManager.LayoutParams createLayoutParams(Context context) {
     int width = context.getResources().getDimensionPixelSize(R.dimen.overlay_width);
+    int windowType = TYPE_SYSTEM_ERROR;
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+      windowType = TYPE_APPLICATION_OVERLAY;
+    }
 
     final WindowManager.LayoutParams params =
-        new WindowManager.LayoutParams(width, WRAP_CONTENT, TYPE_SYSTEM_ERROR, FLAG_NOT_FOCUSABLE
+        new WindowManager.LayoutParams(width, WRAP_CONTENT, windowType, FLAG_NOT_FOCUSABLE
             | FLAG_NOT_TOUCH_MODAL
             | FLAG_LAYOUT_NO_LIMITS
             | FLAG_LAYOUT_INSET_DECOR
@@ -114,7 +114,15 @@ final class OverlayView extends FrameLayout {
 
   @Override public WindowInsets onApplyWindowInsets(WindowInsets insets) {
     ViewGroup.LayoutParams lp = getLayoutParams();
-    lp.height = insets.getSystemWindowInsetTop();
+    if (insets.getSystemWindowInsetTop() > 0) {
+      lp.height = insets.getSystemWindowInsetTop();
+    }
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      int statusBarHeight = insets.getSystemWindowInsetTop();
+      lp.height += statusBarHeight;
+      setPaddingRelative(getPaddingStart(), getPaddingTop() + statusBarHeight, getPaddingEnd(), getPaddingBottom());
+    }
 
     listener.onResize();
 
