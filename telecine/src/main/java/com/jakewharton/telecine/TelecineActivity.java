@@ -45,8 +45,7 @@ public final class TelecineActivity extends AppCompatActivity {
     Switch hideFromRecentsView;
     @BindView(R.id.switch_recording_notification)
     Switch recordingNotificationView;
-    @BindView(R.id.switch_show_touches)
-    Switch showTouchesView;
+
     @BindView(R.id.container_use_demo_mode)
     View useDemoModeContainerView;
     @BindView(R.id.switch_use_demo_mode)
@@ -109,7 +108,6 @@ public final class TelecineActivity extends AppCompatActivity {
         showCountdownView.setChecked(showCountdownPreference.get());
         hideFromRecentsView.setChecked(hideFromRecentsPreference.get());
         recordingNotificationView.setChecked(recordingNotificationPreference.get());
-        showTouchesView.setChecked(showTouchesPreference.get());
         useDemoModeView.setChecked(useDemoModePreference.get());
         showDemoModeSetting = new DemoModeHelper.ShowDemoModeSetting() {
             @Override
@@ -216,22 +214,6 @@ public final class TelecineActivity extends AppCompatActivity {
             analytics.send(new HitBuilders.EventBuilder() //
                     .setCategory(Analytics.CATEGORY_SETTINGS)
                     .setAction(Analytics.ACTION_CHANGE_RECORDING_NOTIFICATION)
-                    .setValue(newValue ? 1 : 0)
-                    .build());
-        }
-    }
-
-    @OnCheckedChanged(R.id.switch_show_touches)
-    void onShowTouchesChanged() {
-        boolean newValue = showTouchesView.isChecked();
-        boolean oldValue = showTouchesPreference.get();
-        if (newValue != oldValue) {
-            Timber.d("Show touches preference changing to %s", newValue);
-            showTouchesPreference.set(newValue);
-
-            analytics.send(new HitBuilders.EventBuilder() //
-                    .setCategory(Analytics.CATEGORY_SETTINGS)
-                    .setAction(Analytics.ACTION_CHANGE_SHOW_TOUCHES)
                     .setValue(newValue ? 1 : 0)
                     .build());
         }
